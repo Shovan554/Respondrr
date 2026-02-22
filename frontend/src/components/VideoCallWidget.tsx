@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Phone, PhoneOff, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import ringSound from '../assets/sounds/ring.mp3'
 
 interface VideoCallWidgetProps {
   onCallAccepted: (callData: any) => void
@@ -17,6 +18,7 @@ const VideoCallWidget: React.FC<VideoCallWidgetProps> = ({
 }) => {
   const [incomingCall, setIncomingCall] = useState<any>(null)
   const [accepting, setAccepting] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     const subscription = supabase
@@ -42,6 +44,23 @@ const VideoCallWidget: React.FC<VideoCallWidgetProps> = ({
       subscription.unsubscribe()
     }
   }, [conversationId, currentUserId])
+
+  useEffect(() => {
+    if (incomingCall && audioRef.current) {
+      audioRef.current.loop = true
+      audioRef.current.play().catch(err => console.error('Error playing ring sound:', err))
+    } else if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+      }
+    }
+  }, [incomingCall])
 
   const handleAcceptCall = async () => {
     if (!incomingCall) return
@@ -102,7 +121,9 @@ const VideoCallWidget: React.FC<VideoCallWidgetProps> = ({
   if (!incomingCall) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <>
+      <audio ref={audioRef} src={ringSound} />
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-slate-900 rounded-2xl p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-600/20 flex items-center justify-center">
@@ -137,6 +158,7 @@ const VideoCallWidget: React.FC<VideoCallWidgetProps> = ({
         </div>
       </div>
     </div>
+    </>
   )
 }
 

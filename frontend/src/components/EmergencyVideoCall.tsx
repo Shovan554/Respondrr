@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Phone, PhoneOff, Maximize2 } from 'lucide-react'
+import ringSound from '../assets/sounds/ring.mp3'
 
 interface EmergencyVideoCallProps {
   emergency: any
@@ -19,6 +20,7 @@ export const EmergencyVideoCall: React.FC<EmergencyVideoCallProps> = ({
   doctorName = "Medical Team"
 }) => {
   const [showIncomingCall, setShowIncomingCall] = useState(!isConnected)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     console.log('[EMERGENCY_CALL] Component received emergency:', emergency)
@@ -26,6 +28,23 @@ export const EmergencyVideoCall: React.FC<EmergencyVideoCallProps> = ({
     console.log('[EMERGENCY_CALL] isConnected:', isConnected)
     setShowIncomingCall(!isConnected)
   }, [isConnected, emergency])
+
+  useEffect(() => {
+    if (showIncomingCall && !isConnected && audioRef.current) {
+      audioRef.current.loop = true
+      audioRef.current.play().catch(err => console.error('Error playing ring sound:', err))
+    } else if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+      }
+    }
+  }, [showIncomingCall, isConnected])
 
   if (!emergency) return null
 
@@ -35,7 +54,9 @@ export const EmergencyVideoCall: React.FC<EmergencyVideoCallProps> = ({
 
   if (showIncomingCall && !isConnected) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <>
+        <audio ref={audioRef} src={ringSound} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
           <div className="bg-gradient-to-b from-slate-900 to-slate-800 rounded-[3rem] p-12 text-center border border-blue-500/30 shadow-2xl shadow-blue-500/20 max-w-sm">
             <div className="mb-8">
@@ -79,6 +100,7 @@ export const EmergencyVideoCall: React.FC<EmergencyVideoCallProps> = ({
           </div>
         </div>
       </div>
+      </>
     )
   }
 

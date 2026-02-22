@@ -75,8 +75,6 @@ const DoctorPage = () => {
     setActiveCall(null)
   }
 
-  if (loading) return null
-
   if (activeCall) {
     return (
       <VideoCallInterface
@@ -106,7 +104,12 @@ const DoctorPage = () => {
       </div>
 
       <main className="max-w-5xl mx-auto pt-32 px-6 pb-12 relative z-10">
-        {connectedDoctor ? (
+        {loading ? (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl p-6 h-24 animate-pulse" />
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl p-6 h-64 animate-pulse" />
+          </div>
+        ) : connectedDoctor ? (
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
