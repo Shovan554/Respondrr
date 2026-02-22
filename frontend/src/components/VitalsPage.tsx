@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import Navbar from './Navbar'
 import LoadingPage from './LoadingPage'
-import { supabase } from '../lib/supabase'
+import { getTrends, getVitals } from '../lib/api'
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
+  XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts'
 import { 
   Heart, Wind, Droplets, Brain, Activity, 
-  TrendingUp, Calendar, Clock, ChevronRight, Sun
+  TrendingUp, ChevronRight, Sun
 } from 'lucide-react'
 
 const VitalsPage = () => {
@@ -18,30 +18,18 @@ const VitalsPage = () => {
   const [trendData, setTrendData] = useState<any[]>([])
   const [timeRange, setTimeRange] = useState(7)
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
   const fetchData = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-
     try {
-      const vitalsRes = await fetch(`${API_BASE_URL}/api/dashboard/vitals`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
-      })
-      if (vitalsRes.ok) setVitals(await vitalsRes.json())
+      const vitalsData = await getVitals()
+      setVitals(vitalsData)
 
-      const trendsRes = await fetch(`${API_BASE_URL}/api/dashboard/trends?metric=${selectedMetric}&days=${timeRange}`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
-      })
-      if (trendsRes.ok) {
-        const data = await trendsRes.json()
-        setTrendData(data.map((d: any) => ({
-          time: timeRange === 1 
-            ? new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : new Date(d.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }),
-          value: d.value
-        })))
-      }
+      const data = await getTrends(selectedMetric, timeRange)
+      setTrendData(data.map((d: any) => ({
+        time: timeRange === 1 
+          ? new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : new Date(d.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }),
+        value: d.value
+      })))
     } catch (e) {
       console.error('Failed to fetch vitals data', e)
     }
@@ -55,6 +43,8 @@ const VitalsPage = () => {
     }
     init()
   }, [selectedMetric, timeRange])
+
+  if (loading) return <LoadingPage />
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
@@ -274,6 +264,16 @@ const VitalsPage = () => {
   )
 }
 
+const METRIC_COLORS: Record<string, string> = {
+  red: 'bg-red-500/10 text-red-500',
+  emerald: 'bg-emerald-500/10 text-emerald-500',
+  purple: 'bg-purple-500/10 text-purple-500',
+  blue: 'bg-blue-500/10 text-blue-500',
+  orange: 'bg-orange-500/10 text-orange-500',
+  amber: 'bg-amber-500/10 text-amber-500',
+  indigo: 'bg-indigo-500/10 text-indigo-500'
+}
+
 const MetricSelector = ({ label, value, unit, icon, isActive, onClick, color }: any) => (
   <button 
     onClick={onClick}
@@ -284,7 +284,7 @@ const MetricSelector = ({ label, value, unit, icon, isActive, onClick, color }: 
     }`}
   >
     <div className="flex items-center gap-4">
-      <div className={`p-4 rounded-2xl ${isActive ? 'bg-white/20' : `bg-${color}-500/10 text-${color}-500`}`}>
+      <div className={`p-4 rounded-2xl ${isActive ? 'bg-white/20 text-white' : (METRIC_COLORS[color] || 'bg-white/5 text-slate-300')}`}>
         {icon}
       </div>
       <div className="text-left">

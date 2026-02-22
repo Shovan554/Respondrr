@@ -1,29 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import Navbar from './Navbar'
-import LoadingPage from './LoadingPage'
 import { supabase } from '../lib/supabase'
+import { getDashboardSummary } from '../lib/api'
 import { 
   Activity, Heart, Footprints, 
-  Zap, Sun, Wind, Droplets, TrendingUp, AlertTriangle
+  Zap, Sun, Wind, Droplets, TrendingUp, AlertTriangle, Video
 } from 'lucide-react'
+import VideoCallOverlay from './VideoCallOverlay'
+import { sendEmergencyPing } from '../lib/api'
 
 const PatientDashboard = () => {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<any>(null)
+  const [activeCall, setActiveCall] = useState<any | null>(null)
+  const [callLoading, setCallLoading] = useState(false)
 
   const fetchData = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
     try {
-      const summaryRes = await fetch(`${API_BASE_URL}/api/dashboard/summary`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
-      })
-
-      if (summaryRes.ok) setSummary(await summaryRes.json())
+      const data = await getDashboardSummary()
+      setSummary(data)
     } catch (e) {
       console.error('Failed to fetch dashboard data', e)
     }
@@ -46,6 +42,28 @@ const PatientDashboard = () => {
     }
     init()
   }, [])
+
+  const handleCallDoctor = async () => {
+    setCallLoading(true)
+    try {
+      await sendEmergencyPing({
+        type: 'video_call',
+        urgency: 'high',
+        source: 'patient_dashboard'
+      })
+    } catch (error) {
+      console.error('Failed to send emergency ping', error)
+    } finally {
+      setCallLoading(false)
+      setActiveCall({
+        name: 'On-Call Respondr',
+        status: 'connecting',
+        heart_rate: summary?.latest?.heart_rate?.value ?? '--',
+        last_check_in_min: 1,
+        location: 'Auto-Share Enabled'
+      })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
@@ -78,6 +96,8 @@ const PatientDashboard = () => {
 
         <OverviewTab summary={summary} />
       </main>
+
+      <VideoCallOverlay activeCall={activeCall} onClose={() => setActiveCall(null)} />
     </div>
   )
 }
@@ -159,19 +179,40 @@ const OverviewTab = ({ summary }: any) => {
               Instant bypass to rapid response medical coordination.
             </p>
           </div>
-          <button className="w-full py-6 bg-white text-red-600 rounded-2xl font-black text-xl hover:scale-105 transition-all active:scale-95 shadow-2xl shadow-black/40">
-            ACTIVATE SOS
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleCallDoctor}
+              disabled={callLoading}
+              className="w-full py-5 bg-white text-red-600 rounded-2xl font-black text-lg hover:scale-105 transition-all active:scale-95 shadow-2xl shadow-black/40 disabled:opacity-60"
+            >
+              {callLoading ? 'CONNECTING...' : 'ACTIVATE SOS'}
+            </button>
+            <button
+              onClick={handleCallDoctor}
+              disabled={callLoading}
+              className="w-full py-4 bg-red-900/60 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] border border-white/10 hover:bg-red-900/80 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              <Video className="w-4 h-4" />
+              Video Call Doctor
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
+const KPI_COLORS: Record<string, string> = {
+  red: 'bg-red-500/10',
+  blue: 'bg-blue-500/10',
+  emerald: 'bg-emerald-500/10',
+  amber: 'bg-amber-500/10'
+}
+
 const KPITile = ({ icon, label, value, unit, subtext, color }: any) => (
   <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 hover:border-white/20 transition-all group">
     <div className="flex items-center gap-4 mb-8">
-      <div className={`p-4 bg-${color}-500/10 rounded-2xl group-hover:scale-110 transition-transform`}>
+      <div className={`p-4 ${KPI_COLORS[color] || 'bg-white/5'} rounded-2xl group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
       <span className="font-black text-slate-500 uppercase tracking-[0.2em] text-[10px]">{label}</span>
