@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Navbar from './Navbar'
 import { supabase } from '../lib/supabase'
-import { getActiveCases, getDispatchAlert } from '../lib/api'
-import { Activity, Shield, Users, Clock, ArrowRight, AlertTriangle, Radio, Video } from 'lucide-react'
-import VideoCallOverlay from './VideoCallOverlay'
+import { Activity, Shield, Users, Clock, ArrowRight, AlertTriangle, Radio } from 'lucide-react'
 
 const RespondrDashboard = () => {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [activeCases, setActiveCases] = useState<any[]>([])
-  const [dispatchAlert, setDispatchAlert] = useState<any>(null)
-  const [activeCall, setActiveCall] = useState<any | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -28,38 +23,7 @@ const RespondrDashboard = () => {
     fetchProfile()
   }, [])
 
-  useEffect(() => {
-    const fetchDispatch = async () => {
-      try {
-        const [casesData, dispatchData] = await Promise.all([
-          getActiveCases(),
-          getDispatchAlert()
-        ])
-        setActiveCases(casesData || [])
-        setDispatchAlert(dispatchData)
-      } catch (error) {
-        console.error('Failed to load responder feed', error)
-      }
-    }
-
-    fetchDispatch()
-  }, [])
-
   if (loading) return null
-
-  const activeCount = activeCases.length || 0
-  const responseEta = dispatchAlert?.response_eta_min ?? 4
-  const dispatchDescription = dispatchAlert?.description || 'Level 2 emergency detected in Zone A. Immediate response required.'
-  const resolveInitials = (name?: string) => {
-    if (!name) return 'NA'
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase()
-  }
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
@@ -117,7 +81,7 @@ const RespondrDashboard = () => {
               <span className="font-black text-slate-500 uppercase tracking-[0.2em] text-[10px]">Response</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white tabular-nums">{responseEta}</span>
+              <span className="text-4xl font-black text-white tabular-nums">4</span>
               <span className="text-slate-500 font-black text-sm uppercase tracking-widest">Mins</span>
             </div>
           </div>
@@ -130,7 +94,7 @@ const RespondrDashboard = () => {
               <span className="font-black text-slate-500 uppercase tracking-[0.2em] text-[10px]">Active</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-white tabular-nums">{activeCount}</span>
+              <span className="text-4xl font-black text-white tabular-nums">3</span>
               <span className="text-slate-500 font-black text-sm uppercase tracking-widest">Cases</span>
             </div>
           </div>
@@ -156,30 +120,22 @@ const RespondrDashboard = () => {
               <button className="text-blue-500 font-black uppercase tracking-widest text-[10px] hover:underline">Full Access</button>
             </div>
             <div className="space-y-6">
-              {activeCases.map((caseItem) => (
-                <div key={caseItem.id} className="flex items-center gap-6 p-6 rounded-3xl bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-6 p-6 rounded-3xl bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
                   <div className="h-16 w-16 bg-slate-800 rounded-2xl flex items-center justify-center font-black text-white text-xl group-hover:bg-blue-600 transition-all">
-                    {caseItem.initials || resolveInitials(caseItem.name)}
+                    {['JD', 'MS', 'AB'][i-1]}
                   </div>
                   <div className="flex-grow">
-                    <h4 className="font-black text-white text-xl tracking-tight mb-1">{caseItem.name}</h4>
-                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Last Check-in • {caseItem.last_check_in_min ?? '--'} mins ago</p>
+                    <h4 className="font-black text-white text-xl tracking-tight mb-1">{['John Doe', 'Maria Santos', 'Alice Baker'][i-1]}</h4>
+                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Last Check-in • {i * 2} mins ago</p>
                   </div>
                   <div className="flex gap-6 items-center">
                     <div className="text-right">
-                      <span className="block font-black text-red-500 text-3xl tracking-tighter tabular-nums">{caseItem.heart_rate ?? '--'} <span className="text-[10px] uppercase align-middle ml-1 text-slate-500">BPM</span></span>
+                      <span className="block font-black text-red-500 text-3xl tracking-tighter tabular-nums">{110 + i * 5} <span className="text-[10px] uppercase align-middle ml-1 text-slate-500">BPM</span></span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setActiveCall(caseItem)}
-                        className="p-4 bg-blue-600 rounded-2xl text-white hover:bg-blue-500 transition-all active:scale-95 shadow-xl"
-                      >
-                        <Video className="w-6 h-6" />
-                      </button>
-                      <button className="p-4 bg-slate-800 rounded-2xl text-white hover:bg-blue-600 transition-all active:scale-95 shadow-xl">
-                        <ArrowRight className="w-6 h-6" />
-                      </button>
-                    </div>
+                    <button className="p-4 bg-slate-800 rounded-2xl text-white hover:bg-blue-600 transition-all active:scale-95 shadow-xl">
+                      <ArrowRight className="w-6 h-6" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -192,8 +148,8 @@ const RespondrDashboard = () => {
                 <AlertTriangle className="w-20 h-20 rotate-12" />
               </div>
               <div className="relative">
-                <h3 className="text-3xl font-black mb-4 tracking-tight leading-none">{dispatchAlert?.title || 'New Dispatch'}</h3>
-                <p className="text-blue-100 text-sm font-medium leading-relaxed mb-8">{dispatchDescription}</p>
+                <h3 className="text-3xl font-black mb-4 tracking-tight leading-none">New Dispatch</h3>
+                <p className="text-blue-100 text-sm font-medium leading-relaxed mb-8">Level 2 Emergency detected in Zone A. Immediate response required.</p>
                 <button className="w-full py-5 bg-white text-blue-900 rounded-2xl font-black text-xl hover:scale-105 transition-all active:scale-95 shadow-xl shadow-black/20">
                   RESPOND NOW
                 </button>
@@ -217,8 +173,6 @@ const RespondrDashboard = () => {
           </div>
         </div>
       </main>
-
-      <VideoCallOverlay activeCall={activeCall} onClose={() => setActiveCall(null)} />
     </div>
   )
 }

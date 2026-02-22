@@ -7,9 +7,6 @@ import PatientDashboard from './components/PatientDashboard'
 import RespondrDashboard from './components/RespondrDashboard'
 import AccountPage from './components/AccountPage'
 import VitalsPage from './components/VitalsPage'
-import RecentDoctorsPage from './components/RecentDoctorsPage'
-import RecentPatientsPage from './components/RecentPatientsPage'
-import VitalsMonitorPage from './components/VitalsMonitorPage'
 
 function App() {
   const [isAppBooting, setIsAppBooting] = useState(true)
@@ -33,9 +30,6 @@ function App() {
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
           <Route path="/vitals" element={<VitalsPage />} />
           <Route path="/respondr-dashboard" element={<RespondrDashboard />} />
-          <Route path="/recent-doctors" element={<RecentDoctorsPage />} />
-          <Route path="/recent-patients" element={<RecentPatientsPage />} />
-          <Route path="/vitals-monitor" element={<VitalsMonitorPage />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
