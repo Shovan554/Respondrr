@@ -225,6 +225,33 @@ Video call sessions between patients and doctors.
 
 ---
 
+### alerts
+Patient alerts and notifications for health conditions and events.
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | bigint | NO | - |
+| patient_id | uuid | NO | - |
+| patient_email | text | NO | - |
+| title | text | NO | - |
+| message | text | NO | - |
+| alert_type | text | NO | 'general'::text |
+| severity | text | NO | 'info'::text |
+| status | text | NO | 'open'::text |
+| acknowledged_by | uuid | YES | NULL |
+| acknowledged_at | timestamp with time zone | YES | NULL |
+| metadata | jsonb | NO | '{}'::jsonb |
+| created_at | timestamp with time zone | NO | now() |
+| updated_at | timestamp with time zone | NO | now() |
+
+**Primary Key:** id  
+**Foreign Keys:** patient_id (references profiles.id), acknowledged_by (references profiles.id)  
+**Alert Types:** 'general', 'health', 'appointment', 'medication', etc.  
+**Severity Levels:** 'info', 'warning', 'critical'  
+**Status Values:** 'open', 'acknowledged', 'resolved'
+
+---
+
 ## Relationships
 
 ```

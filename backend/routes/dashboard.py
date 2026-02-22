@@ -191,39 +191,26 @@ async def check_alerts(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/doctor-alerts")
-async def get_doctor_alerts(user=Depends(get_current_user), status: str = "open"):
+async def get_doctor_alerts(user=Depends(get_current_user)):
     doctor_id = user.id
     try:
-        alert_query = supabase_admin.table("alerts").select("*")
+        patient_links = supabase.table("patient_doctor_links").select("patient_id").eq("doctor_id", doctor_id).eq("status", "active").execute()
+        connected_patient_ids = [link["patient_id"] for link in patient_links.data or []]
         
-        if status:
-            alert_query = alert_query.eq("status", status)
+        if not connected_patient_ids:
+            return {"alerts": []}
         
-        alerts_response = alert_query.order("created_at", desc=True).execute()
+        alerts_response = supabase.table("alerts").select("*").in_("patient_id", connected_patient_ids).eq("status", "open").order("created_at", desc=True).execute()
         all_alerts = alerts_response.data or []
         
-        print(f"[DOCTOR_ALERTS] Found {len(all_alerts)} alerts with status='{status}'")
-        for alert in all_alerts:
-            print(f"[DOCTOR_ALERTS] Alert ID: {alert['id']}, Patient: {alert['patient_email']}, Title: {alert['title']}")
+        print(f"[DOCTOR_ALERTS] Doctor {doctor_id} has {len(connected_patient_ids)} connected patients")
+        print(f"[DOCTOR_ALERTS] Found {len(all_alerts)} alerts for connected patients")
         
-        patient_ids = set(alert["patient_id"] for alert in all_alerts)
-        patient_profiles = {}
-        
-        for patient_id in patient_ids:
-            try:
-                profile_response = supabase_admin.table("profiles").select("id, full_name, email").eq("id", patient_id).single().execute()
-                if profile_response.data:
-                    patient_profiles[patient_id] = profile_response.data
-            except:
-                pass
-        
-        return {
-            "alerts": all_alerts,
-            "patients": patient_profiles,
-            "status_filter": status
-        }
+        return {"alerts": all_alerts}
     except Exception as e:
         print(f"Error fetching doctor alerts: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/alerts/{alert_id}/acknowledge")
