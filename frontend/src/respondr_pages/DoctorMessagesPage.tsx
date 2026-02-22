@@ -47,12 +47,14 @@ const DoctorMessagesPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [initiatingCall, setInitiatingCall] = useState(false)
   const [activeCall, setActiveCall] = useState<any>(null)
+  const [alertsCount, setAlertsCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const initFetch = async () => {
       await fetchConversations()
+      await fetchAlerts()
     }
     initFetch()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,6 +125,25 @@ const DoctorMessagesPage = () => {
       console.error('Error fetching conversations:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAlerts = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const res = await fetch(`${API_BASE_URL}/api/dashboard/doctor-alerts`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setAlertsCount(data.alerts?.length || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching alerts:', error)
     }
   }
 
@@ -283,7 +304,7 @@ const DoctorMessagesPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] text-white">
-        <Navbar role="doctor" />
+        <Navbar role="doctor" alertCount={alertsCount} />
         <div className="flex items-center justify-center h-screen">
           <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
         </div>
@@ -303,7 +324,7 @@ const DoctorMessagesPage = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <Navbar role="doctor" />
+      <Navbar role="doctor" alertCount={alertsCount} />
 
       {selectedConversation && (
         <VideoCallWidget

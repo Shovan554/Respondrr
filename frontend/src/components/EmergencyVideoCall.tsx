@@ -30,18 +30,19 @@ export const EmergencyVideoCall: React.FC<EmergencyVideoCallProps> = ({
   }, [isConnected, emergency])
 
   useEffect(() => {
-    if (showIncomingCall && !isConnected && audioRef.current) {
-      audioRef.current.loop = true
-      audioRef.current.play().catch(err => console.error('Error playing ring sound:', err))
-    } else if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
+    const audio = audioRef.current
+    if (showIncomingCall && !isConnected && audio) {
+      audio.loop = true
+      audio.play().catch(err => console.error('Error playing ring sound:', err))
+    } else if (audio) {
+      audio.pause()
+      audio.currentTime = 0
     }
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current.currentTime = 0
+      if (audio) {
+        audio.pause()
+        audio.currentTime = 0
       }
     }
   }, [showIncomingCall, isConnected])

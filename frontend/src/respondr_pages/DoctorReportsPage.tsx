@@ -59,10 +59,12 @@ const DoctorReportsPage = () => {
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null)
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
+  const [alertsCount, setAlertsCount] = useState(0)
 
   useEffect(() => {
     fetchInitialData()
     setDefaultDates()
+    fetchAlerts()
   }, [])
 
   const setDefaultDates = () => {
@@ -115,6 +117,25 @@ const DoctorReportsPage = () => {
       console.error('[REPORTS] Failed to fetch initial data', e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAlerts = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const res = await fetch(`${API_BASE_URL}/api/dashboard/doctor-alerts`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setAlertsCount(data.alerts?.length || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching alerts:', error)
     }
   }
 
@@ -270,7 +291,7 @@ const DoctorReportsPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] text-white">
-        <Navbar role="doctor" />
+        <Navbar role="doctor" alertCount={alertsCount} />
         <div className="flex items-center justify-center h-screen">
           <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
         </div>
@@ -280,7 +301,7 @@ const DoctorReportsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <Navbar role="doctor" />
+      <Navbar role="doctor" alertCount={alertsCount} />
 
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/10 rounded-full blur-[128px]" />

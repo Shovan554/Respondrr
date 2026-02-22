@@ -6,9 +6,10 @@ import { LogOut, User, Activity, Users, LayoutDashboard, Bell, MessageSquare, Ba
 
 interface NavbarProps {
   role: 'patient' | 'respondr' | 'doctor'
+  alertCount?: number
 }
 
-const Navbar: React.FC<NavbarProps> = ({ role }) => {
+const Navbar: React.FC<NavbarProps> = ({ role, alertCount = 0 }) => {
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -39,7 +40,7 @@ const Navbar: React.FC<NavbarProps> = ({ role }) => {
         {/* Left Side: Logo */}
         <div className="flex items-center -ml-8">
           <Link to={role === 'patient' ? '/patient-dashboard' : '/doctor-dashboard'}>
-            <Logo size={100} className="scale-75 origin-left" />
+            <Logo size={100} className="scale-75 origin-left" alertCount={alertCount} />
           </Link>
         </div>
 

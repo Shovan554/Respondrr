@@ -249,7 +249,7 @@ const DoctorAlertsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <Navbar role="doctor" />
+      <Navbar role="doctor" alertCount={alerts.length} />
 
       {conversationIds.map(convId => (
         <VideoCallWidget

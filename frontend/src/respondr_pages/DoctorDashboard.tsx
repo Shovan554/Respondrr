@@ -31,6 +31,7 @@ const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true)
   const [totalPatients, setTotalPatients] = useState(0)
   const [messagesCount, setMessagesCount] = useState(0)
+  const [alertsCount, setAlertsCount] = useState(0)
   const [pendingRequestsList, setPendingRequestsList] = useState<PatientRequest[]>([])
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
@@ -94,6 +95,19 @@ const DoctorDashboard = () => {
         setMessagesCount(messagesCount || 0)
       } else {
         setMessagesCount(0)
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const res = await fetch(`${API_BASE_URL}/api/dashboard/doctor-alerts`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setAlertsCount(data.alerts?.length || 0)
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -174,7 +188,7 @@ const DoctorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <Navbar role="doctor" />
+      <Navbar role="doctor" alertCount={alertsCount} />
 
       {conversationIds.map(convId => (
         <VideoCallWidget
