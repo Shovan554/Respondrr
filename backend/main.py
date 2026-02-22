@@ -18,6 +18,7 @@ from services.queue import process_emergency_check_queue
 from routes.dashboard import router as dashboard_router
 from routes.video_calls import router as video_calls_router
 from routes.reports import router as reports_router
+from routes.automation_call import router as automation_call_router
 
 app = FastAPI(title="Respondr API")
 
@@ -92,6 +93,7 @@ app.add_event_handler("shutdown", stop_scheduler)
 app.include_router(dashboard_router)
 app.include_router(video_calls_router)
 app.include_router(reports_router)
+app.include_router(automation_call_router)
 
 @app.get("/")
 async def root():

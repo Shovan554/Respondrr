@@ -228,6 +228,46 @@ async def create_emergency(
                 patient_email=patient_email
             )
             
+            print(f"[EMERGENCY] Triggering automation call...")
+            try:
+                print(f"[EMERGENCY] Importing trigger_automation_call...")
+                from services.automation_call import trigger_automation_call
+                
+                print(f"[EMERGENCY] Fetching patient profile for name...")
+                patient_profile = supabase_admin.table("profiles").select("full_name").eq("id", patient_id).single().execute()
+                patient_name = patient_profile.data.get("full_name", "Patient") if patient_profile.data else "Patient"
+                print(f"[EMERGENCY] Patient name: {patient_name}")
+                
+                print(f"[EMERGENCY] Calling trigger_automation_call with parameters:")
+                print(f"[EMERGENCY]   - emergency_id: {emergency_id}")
+                print(f"[EMERGENCY]   - patient_id: {patient_id}")
+                print(f"[EMERGENCY]   - patient_name: {patient_name}")
+                print(f"[EMERGENCY]   - location: University of Rhode Island")
+                print(f"[EMERGENCY]   - call_to_number: +16056709329")
+                
+                automation_result = await trigger_automation_call(
+                    emergency_id=emergency_id,
+                    patient_id=patient_id,
+                    patient_name=patient_name,
+                    location="University of Rhode Island",
+                    call_to_number="+16056709329"
+                )
+                
+                print(f"[EMERGENCY] Automation call result: {automation_result}")
+                
+                if automation_result and automation_result.get("success"):
+                    print(f"[EMERGENCY] ✓ Automation call triggered successfully")
+                    print(f"[EMERGENCY] Automation Call ID: {automation_result.get('automation_call_id')}")
+                    print(f"[EMERGENCY] Twilio Call SID: {automation_result.get('call_sid')}")
+                else:
+                    print(f"[EMERGENCY] ⚠ Automation call failed, but emergency was created")
+                    
+            except Exception as e:
+                print(f"[EMERGENCY] ⚠ Exception in automation call: {e}")
+                print(f"[EMERGENCY] Exception type: {type(e)}")
+                import traceback
+                traceback.print_exc()
+            
             print(f"[EMERGENCY] ============================================\n")
             return emergency
         
