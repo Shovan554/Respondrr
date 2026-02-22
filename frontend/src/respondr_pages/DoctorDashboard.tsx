@@ -37,39 +37,10 @@ const DoctorDashboard = () => {
   const [conversationIds, setConversationIds] = useState<number[]>([])
   const [activeCall, setActiveCall] = useState<any>(null)
 
+
   useEffect(() => {
     fetchDashboardData()
   }, [])
-
-  useEffect(() => {
-    if (conversationIds.length === 0 || !currentUserId) return
-
-    const subscriptions = conversationIds.map(convId =>
-      supabase
-        .channel(`video-calls-dashboard-${convId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'video_calls',
-            filter: `conversation_id=eq.${convId}`
-          },
-          (payload) => {
-            const call = payload.new
-            if (call.started_by !== currentUserId && call.status === 'ringing') {
-              console.log('[DASHBOARD] Incoming call from:', call.started_by)
-              setActiveCall(call)
-            }
-          }
-        )
-        .subscribe()
-    )
-
-    return () => {
-      subscriptions.forEach(sub => sub.unsubscribe())
-    }
-  }, [conversationIds, currentUserId])
 
   const fetchDashboardData = async () => {
     try {

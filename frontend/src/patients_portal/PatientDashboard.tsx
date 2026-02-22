@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar'
 import LoadingPage from '../components/LoadingPage'
 import { supabase } from '../lib/supabase'
+import VideoCallWidget from '../components/VideoCallWidget'
+import VideoCallInterface from '../components/VideoCallInterface'
 import { 
   Activity, Heart, Footprints, 
   Zap, Sun, Wind, Droplets, TrendingUp, AlertTriangle, CheckCircle, XCircle
@@ -11,6 +13,9 @@ const PatientDashboard = () => {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<any>(null)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [conversationIds, setConversationIds] = useState<number[]>([])
+  const [activeCall, setActiveCall] = useState<any>(null)
 
   const fetchData = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -34,12 +39,21 @@ const PatientDashboard = () => {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        setCurrentUserId(user.id)
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single()
         setProfile(profileData)
+
+        const { data: conversationsData } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('patient_id', user.id)
+
+        const convIds = conversationsData?.map(c => c.id) || []
+        setConversationIds(convIds)
       }
       await fetchData()
       setLoading(false)
@@ -47,10 +61,34 @@ const PatientDashboard = () => {
     init()
   }, [])
 
+  const handleCallEnded = () => {
+    setActiveCall(null)
+  }
+
+  if (activeCall) {
+    return (
+      <VideoCallInterface
+        roomUrl={activeCall.room_url}
+        onCallEnded={handleCallEnded}
+        callId={activeCall.id}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#020617] text-white">
       <Navbar role="patient" />
       
+      {conversationIds.map(convId => (
+        <VideoCallWidget
+          key={`call-widget-${convId}`}
+          conversationId={convId}
+          currentUserId={currentUserId}
+          onCallAccepted={(callData) => setActiveCall(callData)}
+          onCallRejected={() => {}}
+        />
+      ))}
+
       {/* Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/10 rounded-full blur-[128px]" />
@@ -88,6 +126,11 @@ const OverviewTab = ({ summary, profile }: any) => {
   const [checkingAlerts, setCheckingAlerts] = useState(false)
   const [alertsResult, setAlertsResult] = useState<any>(null)
   const [showAlertsModal, setShowAlertsModal] = useState(false)
+  const [emergencyCheckLoading, setEmergencyCheckLoading] = useState(false)
+
+
+
+
 
   const handleCheckAlerts = async () => {
     setCheckingAlerts(true)
@@ -188,21 +231,6 @@ const OverviewTab = ({ summary, profile }: any) => {
               All encryption keys are rotated and secure.
             </p>
           </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-red-600 to-red-900 rounded-[2.5rem] p-8 shadow-2xl shadow-red-900/20 relative overflow-hidden flex flex-col justify-between min-h-[400px]">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
-            <AlertTriangle className="w-32 h-32 rotate-12" />
-          </div>
-          <div>
-            <h3 className="text-3xl font-black mb-4 tracking-tighter leading-none">EMERGENCY<br/>PROTOCOL</h3>
-            <p className="text-red-100/70 text-sm font-bold uppercase tracking-widest leading-relaxed">
-              Instant bypass to rapid response medical coordination.
-            </p>
-          </div>
-          <button className="w-full py-6 bg-white text-red-600 rounded-2xl font-black text-xl hover:scale-105 transition-all active:scale-95 shadow-2xl shadow-black/40">
-            ACTIVATE SOS
-          </button>
         </div>
       </div>
 

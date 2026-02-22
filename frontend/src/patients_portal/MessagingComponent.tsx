@@ -208,12 +208,18 @@ const MessagingComponent: React.FC<MessagingComponentProps> = ({ doctor, current
   const handleInitiateCall = async () => {
     if (!conversationId || !currentUser?.id) return
 
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
     setInitiatingCall(true)
     try {
       const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
       const response = await fetch(`${backendUrl}/api/video/initiate-call`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           conversation_id: conversationId,
           initiated_by: currentUser.id
