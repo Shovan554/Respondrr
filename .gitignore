@@ -1,0 +1,38 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.node_modules_old_18/
+*.log
+
+# Build output
+/dist/
+/dist-ssr/
+
+# Local editor/OS
+.DS_Store
+.idea/
+.vscode/
+
+# Local data/logs
+backend/*.log
+frontend/*.log
+
+# SQLite or local DBs
+*.sqlite
+*.sqlite3
